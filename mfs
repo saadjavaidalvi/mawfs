@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Mawfs wrapper script.
 #
 # This exists to smooth over some of the temporary deficiencies of the mawfs
@@ -75,15 +75,16 @@ def get_backing_dir_root():
 
 def get_backing_dir(path):
     """Returns the full path to the backing dir for 'path'.
+
     Args:
         path: (str) absolute path
     """
     hasher = hashlib.md5()
-    hasher.update(path)
+    hasher.update(bytes(path, 'utf8'))
 
     # Encode it and truncate the trailing newline and equal signs.
     return os.path.join(get_backing_dir_root(),
-                        base64.encodestring(hasher.digest())[:-3])
+                        str(base64.b64encode(hasher.digest())[:-3], 'utf8'))
 
 def is_mawfs_root(path):
     """Returns true if 'path' is the root of a MAWFS filesystem.
@@ -205,7 +206,7 @@ def run_mawfs(*args, **kwargs):
         if capture_stdout:
             popen_kwargs['stdout'] = subprocess.PIPE
         proc = subprocess.Popen(cmd, **popen_kwargs)
-        stdout, _ = proc.communicate(stdin or '')
+        stdout, _ = proc.communicate(bytes(stdin or '', 'utf8'))
         rc = proc.wait()
         if capture_stdout:
             return rc, stdout
@@ -319,7 +320,8 @@ def new(path):
                        '-f', '127.0.0.1',
                        stdin=password
                        ) or \
-             run_mawfs('run', backing, path, stdin=password, logfile=logfile)
+             run_mawfs('run', backing, path, stdin=password + '\n',
+                       logfile=logfile)
         if not rc:
             print('Your filesystem has been mounted on %s' % path)
     finally:
@@ -388,7 +390,7 @@ def clone(source, dest):
     print('cloning into %s (mount = %s)' % (backing, dest))
     rc = run_mawfs('clone', '-p', port, '-f', '127.0.0.1', source, backing)
     if rc:
-        print 'Clone failed.'
+        print('Clone failed.')
     else:
         os.mkdir(dest)
         print('or just run %s mount %s' % (sys.argv[0], dest))
@@ -518,7 +520,7 @@ def merge(branch):
             processing = True
         elif processing and line.startswith('   '):
             filename = line[3:]
-            print 'merging %s' % filename
+            print(f'merging {filename}')
             merge_file(inst.mountpoint, branch, filename)
         else:
             print(line)
@@ -603,6 +605,6 @@ def main(args):
         return cmd(*args)
 
     except Abort as ex:
-        print ex.args[0]
+        print(ex.args[0])
 
 sys.exit(main(sys.argv))
