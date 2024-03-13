@@ -84,7 +84,7 @@ def get_backing_dir(path):
 
     # Encode it and truncate the trailing newline and equal signs.
     return os.path.join(get_backing_dir_root(),
-                        str(base64.b64encode(hasher.digest())[:-3], 'utf8'))
+                        str(base64.b64encode(hasher.digest())[:-2], 'utf8'))
 
 def is_mawfs_root(path):
     """Returns true if 'path' is the root of a MAWFS filesystem.
