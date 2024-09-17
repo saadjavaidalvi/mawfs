@@ -375,10 +375,20 @@ def delete(path):
             os.rmdir(path)
     shutil.rmtree(backing)
 
+def is_ssh_url(url):
+    """Check if the given URL uses an SSH-like pattern."""
+    parsed_url = urlparse(url)
+    return parsed_url.scheme == 'ssh' or ':' in url and not os.path.exists(url)
+
 @command
 def clone(source, dest):
     """Clone 'source' to 'dest'."""
-    # TODO: check for ssh: prefixes in both source and dest.
+
+    # Check for SSH prefixes in both source and dest
+    if not is_ssh_url(source):
+        raise Abort(f'Source {source} does not appear to be an SSH URL.')
+    if not is_ssh_url(dest):
+        raise Abort(f'Destination {dest} does not appear to be an SSH URL.')
 
     if os.path.exists(dest):
         raise Abort('%s already exists' % dest)
